@@ -7,6 +7,10 @@ import { h } from './ui.js';
 // Schermate (ognuna si registra nel router)
 import './views/home.js';
 import './views/session.js';
+import './views/history.js';
+import './views/summary.js';
+import './views/more.js';
+import './views/templates.js';
 
 async function start() {
   await openDB();
