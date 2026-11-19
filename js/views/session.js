@@ -98,8 +98,8 @@ route('/sessione/:id', async ({ id }) => {
       h('button.linkbtn', { onclick: () => { extraRows.set(extraKey, (extraRows.get(extraKey) || 0) + 1); refresh(item); } }, '+ serie'),
       h('span.spacer'),
       h('button.linkbtn', { onclick: () => { noteBox.hidden = !noteBox.hidden; if (!noteBox.hidden) noteBox.focus(); } }, exNote ? 'Nota ✎' : '+ nota')),
-      noteBox,
-      prevNote ? h('div.small.muted', { style: 'margin-top:4px' }, `Nota della volta scorsa: ${prevNote}`) : null);
+      noteBox);
+    if (prevNote) card.append(h('div.small.muted', { style: 'margin-top:4px' }, `Nota della volta scorsa: ${prevNote}`));
     return card;
   }
 
@@ -187,7 +187,7 @@ route('/sessione/:id', async ({ id }) => {
         const s = await saveEdits();
         if (!s) return;
         drafts.delete(`${id}|${ex.id}|${n}`);
-        if (isOpen && item.restSec) startTimer({ setId: s.id, duration: item.restSec, label: `${ex.name} · serie ${n}` });
+        if (isOpen && item.restSec) startTimer({ setId: s.id, duration: item.restSec, label: ex.name });
         refresh(item);
       },
     }, '✓');
@@ -198,7 +198,7 @@ route('/sessione/:id', async ({ id }) => {
       checkBtn));
 
     // Valori della volta precedente
-    row.append(h('div.prev', p ? ['ultima volta: ', h('b', setLabel(p, mode))] : (lastPrev ? ['ultima volta: —'] : 'prima volta'),
+    row.append(h('div.prev', p ? ['ultima: ', h('b', setLabel(p, mode))] : (lastPrev ? ['ultima: —'] : 'prima volta'),
       saved?.pr ? h('span.pr-badge', '  🏆 record') : null));
 
     if (mode === 'reps') {
@@ -226,9 +226,12 @@ route('/sessione/:id', async ({ id }) => {
       oninput: (e) => { d.note = e.target.value; },
       onchange: async (e) => { if (saved) { saved.note = e.target.value.trim(); await put('sets', saved); } },
     });
-    row.append(h('div.set-extra',
+    const prevLine = row.querySelector('.prev');
+    prevLine.classList.add('set-extra');
+    prevLine.append(...[
+      h('span.spacer'),
+      saved?.restSec ? h('span.set-meta', `rec. ${fmtRest(saved.restSec)}`) : null,
       h('button.linkbtn', { onclick: () => { noteIn.hidden = !noteIn.hidden; if (!noteIn.hidden) noteIn.focus(); } }, (saved?.note || d.note) ? 'nota ✎' : '+ nota'),
-      saved?.restSec ? h('span.set-meta', `recupero ${fmtRest(saved.restSec)}`) : h('span.spacer'),
       saved ? h('button.linkbtn.danger', {
         onclick: async () => {
           if (!confirm(`Eliminare la serie ${n}?`)) return;
@@ -238,7 +241,7 @@ route('/sessione/:id', async ({ id }) => {
           if (st?.setId === saved.id) await stopTimer();
           refresh(item);
         },
-      }, 'elimina') : null));
+      }, 'elimina') : null].filter(Boolean));
     row.append(h('div.set-note', noteIn));
     return row;
   }

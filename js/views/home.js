@@ -36,7 +36,7 @@ route('/', async () => {
   const today = todayKey();
   const node = h('div');
 
-  node.append(h('p.muted', { style: 'margin:4px 4px 0' }, `Oggi è ${DAYS[dow]} ${fmtDate(now.toISOString())}`));
+  node.append(h('p.muted', { style: 'margin:4px 4px 0' }, 'Oggi è ' + now.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })));
 
   if (open) {
     node.append(h('h2', 'In corso'),
