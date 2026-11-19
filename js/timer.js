@@ -39,12 +39,13 @@ export function startTimer({ setId, duration, label, next, work }) {
   show();
 }
 
-// Fa partire subito la fase di lavoro di una serie a tempo.
+// Avvio a mano di una serie a tempo: prima 10" per mettersi in posizione, poi il lavoro.
+export const PREP_SECONDS = 10;
 export async function startWork(work) {
   unlockAudio();
   const st = load();
   if (st?.phase === 'rest') await recordRest(st, Date.now());
-  save({ phase: 'work', setId: null, duration: work.seconds, label: work.label, next: '', work, start: Date.now() });
+  save({ phase: 'rest', prep: true, setId: null, duration: PREP_SECONDS, label: work.label, next: '', work, start: Date.now() });
   show();
   openFull();
 }
@@ -52,7 +53,7 @@ export async function startWork(work) {
 // Aggiorna la "prossima serie" senza toccare il tempo.
 export function setNext(next, work) {
   const st = load();
-  if (!st || st.phase !== 'rest') return;
+  if (!st || st.phase !== 'rest' || st.prep) return;
   st.next = next || '';
   st.work = work || null;
   save(st);
@@ -171,25 +172,28 @@ function draw() {
   if (over && beepedFor !== phaseKey) { beepedFor = phaseKey; if (-left < 5) beep(); }
   const time = over ? '+' + fmtSec(-left) : fmtSec(left);
   const pct = st.duration ? Math.min(1, elapsed / st.duration) : 1;
-  const stateText = work ? 'Lavoro' : over ? 'Recupero finito: vai!' : 'Recupero';
+  const prep = !!st.prep;
+  const stateText = work ? 'Lavoro' : prep ? 'Preparati' : over ? 'Recupero finito: vai!' : 'Recupero';
 
   const box = bar();
   box.classList.toggle('over', over && !work);
   box.classList.toggle('work', work);
+  box.classList.toggle('prep', prep);
   box.querySelector('.t-time').textContent = time;
-  box.querySelector('.t-label').textContent = work ? `Lavoro · ${st.label || ''}` : over ? 'Recupero finito: vai!' : `Recupero · ${st.label || ''}`;
+  box.querySelector('.t-label').textContent = work ? `Lavoro · ${st.label || ''}` : prep ? `Preparati · ${st.label || ''}` : over ? 'Recupero finito: vai!' : `Recupero · ${st.label || ''}`;
   box.querySelector('.bar i').style.width = pct * 100 + '%';
 
   if (full && !full.hidden) {
     full.classList.toggle('over', over && !work);
     full.classList.toggle('work', work);
+    full.classList.toggle('prep', prep);
     full.querySelector('.tf-time').textContent = time;
     full.querySelector('.tf-state').textContent = stateText;
     full.querySelector('.tf-label').textContent = st.label || '';
     full.querySelector('.tf-ring-fg').style.strokeDashoffset = String(RING * pct);
-    full.querySelector('.tf-total').textContent = `${work ? 'Lavoro' : 'Previsto'} ${fmtSec(st.duration)}`;
+    full.querySelector('.tf-total').textContent = prep ? `Poi ${fmtSec(st.work.seconds)} di lavoro` : `${work ? 'Lavoro' : 'Previsto'} ${fmtSec(st.duration)}`;
     const nx = full.querySelector('.tf-next');
-    const nextText = work ? '' : st.work ? `${st.next} · parte da sola` : st.next;
+    const nextText = work || prep ? '' : st.work ? `${st.next} · parte da sola` : st.next;
     nx.hidden = !nextText;
     nx.querySelector('span').textContent = nextText || '';
     full.querySelector('.tf-skip').textContent = work ? 'Serie finita' : st.work ? 'Inizia ora' : 'Fine recupero';
