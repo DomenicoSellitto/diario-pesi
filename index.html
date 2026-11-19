@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Diario Pesi</title>
+  <meta name="description" content="Diario di allenamento con i pesi e il pugilato">
+  <meta name="theme-color" content="#f4f4f6" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#111114" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Diario Pesi">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar" id="topbar">
+    <button class="topbar-back" id="back" hidden aria-label="Indietro">‹</button>
+    <h1 id="title">Diario Pesi</h1>
+    <div class="topbar-right" id="topbar-right"></div>
+  </header>
+
+  <main id="view" tabindex="-1"></main>
+
+  <div id="timer" class="timer" hidden></div>
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <nav class="tabbar" id="tabbar">
+    <a href="#/" data-tab="home"><span class="ico">●</span>Oggi</a>
+    <a href="#/storico" data-tab="storico"><span class="ico">↗</span>Storico</a>
+    <a href="#/riepilogo" data-tab="riepilogo"><span class="ico">Σ</span>Riepilogo</a>
+    <a href="#/altro" data-tab="altro"><span class="ico">⋯</span>Altro</a>
+  </nav>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
