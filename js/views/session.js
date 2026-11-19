@@ -4,7 +4,7 @@ import { route, go } from '../router.js';
 import { h, toast, parseNum, fmtNum, fmtDate, fmtRest, setLabel, epley } from '../ui.js';
 import { get, put, del, all, uid } from '../db.js';
 import { exercisesMap, setsOfSession, historyOf, bestOf, sessionVolume, openSession } from '../data.js';
-import { startTimer, stopTimer, timerState, restoreTimer, setNext } from '../timer.js';
+import { startTimer, stopTimer, timerState, restoreTimer, setNext, startWork } from '../timer.js';
 import { GROUPS } from '../seed.js';
 
 // Valori scritti ma non ancora confermati, per non perderli quando la scheda si ridisegna.
@@ -45,6 +45,8 @@ document.addEventListener('visibilitychange', async () => {
 });
 
 let clockTick = null;
+let onWorkDone = null;
+let onRestRecorded = null;
 
 function targetSeconds(item) {
   const m = String(item.reps || '').match(/(\d+)\s*"/);
@@ -58,12 +60,15 @@ route('/sessione/:id', async ({ id }) => {
   const exMap = await exercisesMap();
   const isOpen = !session.end;
 
-  const items = [...(template?.items || [])];
+  let sets = await setsOfSession(id);
+  // Se la scheda è stata eliminata, ricostruisco l'elenco dagli esercizi registrati
+  const items = template ? [...template.items] : [...new Set(sets.map(s => s.exerciseId))].map(exId => ({
+    exerciseId: exId, sets: sets.filter(s => s.exerciseId === exId).length, reps: '', restSec: 0, optional: false, note: '',
+  }));
   for (const exId of session.extraExercises || []) {
     if (!items.some(i => i.exerciseId === exId)) items.push({ exerciseId: exId, sets: 1, reps: '', restSec: 60, optional: true, note: '', extra: true });
   }
 
-  let sets = await setsOfSession(id);
   const histories = new Map();
   await Promise.all(items.map(async it => histories.set(it.exerciseId, await historyOf(it.exerciseId))));
 
@@ -119,6 +124,39 @@ route('/sessione/:id', async ({ id }) => {
     }, 1000);
   }
 
+  // Dati della serie a tempo di una riga (per far partire il lavoro in automatico)
+  function workFromRow(row) {
+    if (!row || row.dataset.mode !== 'time' || row.classList.contains('saved')) return null;
+    const [wIn, secIn] = row.querySelectorAll('.set-inputs input');
+    const seconds = Math.round(parseNum(secIn?.value) || 0);
+    if (!seconds) return null;
+    return {
+      sessionId: id, exerciseId: row.dataset.ex, setNumber: Number(row.dataset.n), seconds,
+      weight: parseNum(wIn?.value) ?? 0, restSec: Number(row.dataset.rest) || 0,
+      label: row.dataset.title, exerciseName: exMap.get(row.dataset.ex)?.name || '',
+    };
+  }
+
+  // Fine del lavoro a tempo: confermo la serie come se avessi toccato ✓
+  document.removeEventListener('work-done', onWorkDone);
+  onWorkDone = (e) => {
+    const w = e.detail;
+    if (!node.isConnected || w.sessionId !== id) return;
+    const row = node.querySelector(`.set[data-ex="${CSS.escape(w.exerciseId)}"][data-n="${w.setNumber}"]`);
+    if (!row || row.classList.contains('saved')) return;
+    e.preventDefault();
+    const secIn = row.querySelectorAll('.set-inputs input')[1];
+    if (secIn) { secIn.value = String(w.seconds); secIn.dispatchEvent(new Event('input')); }
+    row.querySelector('.check').click();
+  };
+  document.addEventListener('work-done', onWorkDone);
+  document.removeEventListener('rest-recorded', onRestRecorded);
+  onRestRecorded = (e) => {
+    const s = sets.find(x => x.id === e.detail.setId);
+    if (s) s.restSec = e.detail.elapsed;
+  };
+  document.addEventListener('rest-recorded', onRestRecorded);
+
   function updateProgress() {
     const main = items.filter(i => !i.optional);
     let doneEx = 0, doneSets = 0, totalSets = 0;
@@ -153,7 +191,7 @@ route('/sessione/:id', async ({ id }) => {
     cur.prepend(h('div.now-tag', 'SERIE IN CORSO'));
     const card = cur.closest('.ex');
     card.classList.add('current-ex');
-    setNext(cur.dataset.label);
+    setNext(cur.dataset.label, workFromRow(cur));
     if (scroll && (!last || last.exerciseId !== cur.dataset.ex)) {
       setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
     }
@@ -221,6 +259,9 @@ route('/sessione/:id', async ({ id }) => {
     row.dataset.ex = ex.id;
     row.dataset.n = String(n);
     row.dataset.label = `${ex.name} · serie ${n}` + (p ? ` · ultima ${setLabel(p, mode)}` : '');
+    row.dataset.title = `${ex.name} · serie ${n}`;
+    row.dataset.mode = mode;
+    row.dataset.rest = String(item.restSec || 0);
 
     if (mode === 'check') {
       row.append(h('div.set-top',
@@ -347,6 +388,9 @@ route('/sessione/:id', async ({ id }) => {
     prevLine.classList.add('set-extra');
     prevLine.append(...[
       h('span.spacer'),
+      mode === 'time' && !saved && isOpen ? h('button.work-btn', {
+        onclick: () => { const w = workFromRow(row); if (w) startWork(w); },
+      }, `▶ Avvia ${parseNum(amountIn.value) || ''}"`) : null,
       saved?.restSec ? h('span.set-meta', `rec. ${fmtRest(saved.restSec)}`) : null,
       h('button.linkbtn', { onclick: () => { noteIn.hidden = !noteIn.hidden; if (!noteIn.hidden) noteIn.focus(); } }, (saved?.note || d.note) ? 'nota ✎' : '+ nota'),
       saved ? h('button.linkbtn.danger', {
