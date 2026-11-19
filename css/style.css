@@ -15,6 +15,7 @@
   --radius: 14px;
   --tap: 48px;
   --tabbar-h: 58px;
+  --topbar-h: 56px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -53,12 +54,14 @@ a { color: var(--accent); }
 
 /* Barra in alto */
 .topbar {
-  position: sticky; top: 0; z-index: 20;
+  /* fissa come la barra in basso: con "sticky" iPhone disegnava il testo sfocato */
+  position: fixed; top: 0; left: 0; right: 0; z-index: 20;
   display: flex; align-items: center; gap: 8px;
-  padding: calc(var(--safe-top) + 8px) 16px 8px;
+  padding: var(--safe-top) 16px 0;
+  height: calc(var(--safe-top) + var(--topbar-h));
   background: var(--bg);
   border-bottom: 1px solid var(--line);
-  min-height: calc(var(--safe-top) + 52px);
+  -webkit-font-smoothing: antialiased;
 }
 .topbar h1 { font-size: 19px; margin: 0; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .topbar-back {
@@ -68,7 +71,7 @@ a { color: var(--accent); }
 .topbar-right { display: flex; gap: 8px; }
 
 main {
-  padding: 12px 16px calc(var(--tabbar-h) + var(--safe-bottom) + 90px);
+  padding: calc(var(--safe-top) + var(--topbar-h) + 12px) 16px calc(var(--tabbar-h) + var(--safe-bottom) + 90px);
   max-width: 640px; margin: 0 auto;
   outline: none;
 }
@@ -328,7 +331,7 @@ body.no-scroll { overflow: hidden; }
 .tf-next small { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; opacity: .7; font-weight: 600; }
 .tf-next span { font-size: 17px; font-weight: 600; }
 .timer-full.over .tf-next { background: rgba(255,255,255,.15); border-color: transparent; }
-.tf-skip { margin-top: auto; width: 100%; max-width: 480px; min-height: 60px; border-radius: 16px; border: 0; background: var(--accent); color: #fff; font-size: 19px; font-weight: 800; }
+.tf-skip { flex: 2; min-height: 60px; border-radius: 16px; border: 0; background: var(--accent); color: #fff; font-size: 19px; font-weight: 800; }
 .timer-full.over .tf-skip { background: #fff; color: var(--ok); }
 
 /* Serie in corso e avanzamento */
@@ -352,3 +355,18 @@ body.no-scroll { overflow: hidden; }
 .clock-btn.running { color: var(--text); }
 .clock-btn.idle { color: var(--accent); }
 .ex { scroll-margin-top: calc(var(--safe-top) + 64px); }
+
+/* Fase di lavoro (esercizi a tempo) */
+.timer.work { background: var(--accent); color: #fff; }
+.timer.work button { color: #fff; background: rgba(255,255,255,.2); }
+.timer.work .bar i { background: #fff; }
+.timer-full.work { background: var(--accent); color: #fff; }
+.timer-full.work .tf-close, .timer-full.work .tf-adjust button, .timer-full.work .tf-stop { background: rgba(255,255,255,.2); color: #fff; }
+.timer-full.work .tf-ring-bg { stroke: rgba(255,255,255,.25); }
+.timer-full.work .tf-ring-fg { stroke: #fff; }
+.timer-full.work .tf-skip { background: #fff; color: var(--accent); }
+.tf-actions { margin-top: auto; display: flex; gap: 10px; width: 100%; max-width: 480px; }
+.tf-stop { flex: 1; min-height: 60px; border-radius: 16px; border: 0; background: var(--card-2); color: inherit; font-size: 17px; font-weight: 700; }
+.timer-full.over .tf-stop { background: rgba(255,255,255,.2); color: #fff; }
+.work-btn { border: 0; background: var(--accent); color: #fff; border-radius: 10px; min-height: 34px; padding: 0 12px; font-weight: 700; font-size: 14px; }
+.set:not(.current) .work-btn { display: none; }
