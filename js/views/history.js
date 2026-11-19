@@ -5,7 +5,12 @@ import { all, get, put } from '../db.js';
 import { historyOf, bestOf } from '../data.js';
 import { GROUPS, TYPES } from '../seed.js';
 
+// Da dove si è arrivati al dettaglio dell'esercizio (Storico o elenco Esercizi)
+export let exerciseBack = '#/storico';
+export function setExerciseBack(hash) { exerciseBack = hash; }
+
 route('/storico', async () => {
+  exerciseBack = '#/storico';
   const [exercises, sets, templates] = await Promise.all([all('exercises'), all('sets'), all('templates')]);
   const count = new Map();
   for (const s of sets) {
@@ -152,5 +157,6 @@ route('/esercizio/:id', async ({ id }) => {
   if (ex.note) node.prepend(h('div.card.small', '📝 ' + ex.note));
   node.append(h('details', { style: 'margin-top:16px' }, h('summary', h('h2', { style: 'display:inline' }, 'Modifica esercizio')), form));
 
-  return { title: ex.name, back: '#/storico', node, tab: 'storico' };
+  const fromList = exerciseBack === '#/esercizi';
+  return { title: ex.name, back: exerciseBack, node, tab: fromList ? 'altro' : 'storico' };
 });

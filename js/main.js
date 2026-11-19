@@ -11,6 +11,7 @@ import './views/history.js';
 import './views/summary.js';
 import './views/more.js';
 import './views/templates.js';
+import './views/exercises.js';
 
 async function start() {
   await openDB();

@@ -33,7 +33,8 @@ route('/altro', async () => {
 
   node.append(h('h2', 'Schede'),
     h('ul.list.card', { style: 'padding:0 12px' },
-      h('li', h('a.item', { href: '#/schede' }, h('span', { style: 'flex:1' }, 'Gestisci schede e cambio scheda'), h('span.chev', '›')))));
+      h('li', h('a.item', { href: '#/schede' }, h('span', { style: 'flex:1' }, 'Gestisci schede e cambio scheda'), h('span.chev', '›'))),
+      h('li', h('a.item', { href: '#/esercizi' }, h('span', { style: 'flex:1' }, 'Esercizi: aggiungi e modifica'), h('span.chev', '›')))));
 
   const days = last ? Math.floor((Date.now() - new Date(last)) / 86400000) : null;
   const jsonBtn = h('button.btn.primary.block', { onclick: () => exportFile(buildJSON, true, jsonBtn) }, 'Esporta backup completo (JSON)');
