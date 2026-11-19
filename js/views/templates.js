@@ -1,7 +1,7 @@
 // Schede: elenco, modifica e cambio scheda (la vecchia viene archiviata, non cancellata).
 import { route, go } from '../router.js';
 import { h, toast, fmtDate, fmtRest, parseNum } from '../ui.js';
-import { all, get, put, uid } from '../db.js';
+import { all, get, put, del, uid } from '../db.js';
 import { GROUPS } from '../seed.js';
 
 route('/schede', async () => {
@@ -55,6 +55,27 @@ route('/schede', async () => {
   return { title: 'Schede', back: '#/altro', node, tab: 'altro' };
 });
 
+// Elimina una scheda. Allenamenti, esercizi e storico restano: si cancella solo l'elenco della scheda.
+function deleteButton(t) {
+  return h('button.btn.danger.block', {
+    style: 'margin-top:10px',
+    onclick: async () => {
+      const sessions = await all('sessions');
+      if (sessions.some(s => s.templateId === t.id && !s.end)) {
+        return toast('C\'è un allenamento aperto con questa scheda: terminalo prima di eliminarla.', { ms: 5000 });
+      }
+      const used = sessions.filter(s => s.templateId === t.id).length;
+      const msg = `Eliminare la Scheda ${t.name}?` + (used
+        ? `\n\nI ${used} allenamenti fatti con questa scheda e lo storico degli esercizi restano.`
+        : '\n\nNon è mai stata usata per un allenamento.') + '\n\nNon si può annullare.';
+      if (!confirm(msg)) return;
+      await del('templates', t.id);
+      toast(`Scheda ${t.name} eliminata`);
+      go('#/schede');
+    },
+  }, 'Elimina scheda');
+}
+
 route('/scheda/:id', async ({ id }) => {
   const t = await get('templates', id);
   if (!t) return { title: 'Scheda', back: '#/schede', node: h('p.empty', 'Scheda non trovata.') };
@@ -69,7 +90,7 @@ route('/scheda/:id', async ({ id }) => {
     const ul = h('div.card');
     t.items.forEach((it, i) => ul.append(h('div', { style: 'padding:6px 0' },
       `${i + 1}. ${exMap.get(it.exerciseId)?.name || it.exerciseId} — ${it.sets} × ${it.reps}`, it.restSec ? ` · rec. ${fmtRest(it.restSec)}` : '', it.optional ? ' (opz.)' : '')));
-    node.append(ul);
+    node.append(ul, deleteButton(t));
     return { title: `Scheda ${t.name}`, back: '#/schede', node, tab: 'altro' };
   }
 
@@ -144,7 +165,7 @@ route('/scheda/:id', async ({ id }) => {
       toast('Scheda salvata');
       go('#/schede');
     },
-  }, 'Salva scheda')));
+  }, 'Salva scheda'), deleteButton(t)));
 
   return { title: `Scheda ${t.name}`, back: '#/schede', node, tab: 'altro' };
 });
