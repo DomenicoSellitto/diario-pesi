@@ -120,6 +120,13 @@ Note sulla scheda:
 - `js/db.js`: IndexedDB e migrazioni (`DB_VERSION`). `js/seed.js`: esercizi e schede iniziali.
 - **Ad ogni rilascio va aumentato `VERSION` in `sw.js`**, altrimenti l'iPhone continua a usare i file vecchi.
 
+## Pubblicazione
+
+- Repository: `github.com/DomenicoSellitto/diario-pesi` (pubblico, contiene solo il codice). App: **https://domenicosellitto.github.io/diario-pesi/** (GitHub Pages dal ramo `main`, cartella radice).
+- Per pubblicare basta `git push`: Pages si aggiorna da solo in circa un minuto.
+- Sul Mac sono collegati due account GitHub: **monaci-dev** (lavoro, deve restare quello attivo) e **DomenicoSellitto** (personale). Questo repository usa sempre l'account personale grazie a un credential helper impostato solo in `.git/config` (`gh auth token --user DomenicoSellitto`). Non cambiare l'account attivo di `gh` e non toccare la configurazione globale di git.
+- Email dei commit (solo in questo repository): l'indirizzo noreply di GitHub, così l'email personale non diventa pubblica.
+
 ## Modo di lavorare
 
 - Procedi per passi piccoli e verificabili. Dopo ogni passo spiega all'utente cosa può provare sull'iPhone.
