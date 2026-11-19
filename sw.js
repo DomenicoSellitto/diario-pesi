@@ -1,6 +1,6 @@
 // Service worker: tiene in memoria i file dell'app per usarla offline.
 // IMPORTANTE: aumenta VERSION ad ogni pubblicazione, così l'iPhone scarica i file nuovi.
-const VERSION = 'v3';
+const VERSION = 'v4';
 const CACHE = 'diario-pesi-' + VERSION;
 const FILES = [
   './',

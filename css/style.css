@@ -15,9 +15,16 @@
   --radius: 14px;
   --tap: 48px;
   --tabbar-h: 58px;
-  --topbar-h: 56px;
+  --topbar-h: 52px;
+  /* iOS sfoca la fascia subito sotto l'orologio: la barra parte più in basso.
+     Su un computer (senza safe area) lo spazio extra non serve. */
+  --topbar-pad: 0px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@supports (padding-top: env(safe-area-inset-top)) {
+  :root { --topbar-pad: min(env(safe-area-inset-top), 24px); }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -57,8 +64,8 @@ a { color: var(--accent); }
   /* fissa come la barra in basso: con "sticky" iPhone disegnava il testo sfocato */
   position: fixed; top: 0; left: 0; right: 0; z-index: 20;
   display: flex; align-items: center; gap: 8px;
-  padding: var(--safe-top) 16px 0;
-  height: calc(var(--safe-top) + var(--topbar-h));
+  padding: calc(var(--safe-top) + var(--topbar-pad)) 16px 0;
+  height: calc(var(--safe-top) + var(--topbar-pad) + var(--topbar-h));
   background: var(--bg);
   border-bottom: 1px solid var(--line);
   -webkit-font-smoothing: antialiased;
@@ -71,7 +78,7 @@ a { color: var(--accent); }
 .topbar-right { display: flex; gap: 8px; }
 
 main {
-  padding: calc(var(--safe-top) + var(--topbar-h) + 12px) 16px calc(var(--tabbar-h) + var(--safe-bottom) + 90px);
+  padding: calc(var(--safe-top) + var(--topbar-pad) + var(--topbar-h) + 12px) 16px calc(var(--tabbar-h) + var(--safe-bottom) + 90px);
   max-width: 640px; margin: 0 auto;
   outline: none;
 }
@@ -239,7 +246,7 @@ details.optional[open] > summary h2::after { content: " ▾"; }
 /* Avvisi */
 .toasts {
   position: fixed; left: 12px; right: 12px; z-index: 40;
-  top: calc(var(--safe-top) + 60px);
+  top: calc(var(--safe-top) + var(--topbar-pad) + var(--topbar-h) + 8px);
   display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none;
 }
 .toast {
@@ -294,7 +301,7 @@ details.optional[open] > summary h2::after { content: " ▾"; }
 
 .update-banner {
   position: fixed; left: 12px; right: 12px; z-index: 45;
-  top: calc(var(--safe-top) + 10px);
+  top: calc(var(--safe-top) + var(--topbar-pad) + 6px);
   max-width: 520px; margin: 0 auto;
 }
 
@@ -305,7 +312,7 @@ body.no-scroll { overflow: hidden; }
   position: fixed; inset: 0; z-index: 50;
   background: var(--bg); color: var(--text);
   display: flex; flex-direction: column; align-items: center;
-  padding: calc(var(--safe-top) + 12px) 20px calc(var(--safe-bottom) + 20px);
+  padding: calc(var(--safe-top) + var(--topbar-pad) + 12px) 20px calc(var(--safe-bottom) + 20px);
   gap: 14px;
 }
 .timer-full.over { background: var(--ok); color: #fff; }
@@ -354,7 +361,7 @@ body.no-scroll { overflow: hidden; }
 }
 .clock-btn.running { color: var(--text); }
 .clock-btn.idle { color: var(--accent); }
-.ex { scroll-margin-top: calc(var(--safe-top) + 64px); }
+.ex { scroll-margin-top: calc(var(--safe-top) + var(--topbar-pad) + var(--topbar-h) + 10px); }
 
 /* Fase di lavoro (esercizi a tempo) */
 .timer.work { background: var(--accent); color: #fff; }
