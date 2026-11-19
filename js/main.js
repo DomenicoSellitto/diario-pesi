@@ -6,6 +6,7 @@ import { h } from './ui.js';
 
 // Schermate (ognuna si registra nel router)
 import './views/home.js';
+import './views/session.js';
 
 async function start() {
   await openDB();
