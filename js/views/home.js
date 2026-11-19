@@ -3,6 +3,7 @@ import { route, go } from '../router.js';
 import { h, toast, fmtDate, todayKey } from '../ui.js';
 import { all, put, del, uid } from '../db.js';
 import { activeTemplates, openSession, sessionsSorted } from '../data.js';
+import { fmtDuration } from './session.js';
 
 export const BOXING_TYPES = [
   { id: 'tecnica', label: 'Tecnica', day: 1 },
@@ -89,7 +90,8 @@ route('/', async () => {
       if (r.kind === 'pesi') {
         ul.append(h('li', h('a.item', { href: '#/sessione/' + r.s.id },
           h('span', '🏋️'), h('span', { style: 'flex:1' }, `Scheda ${r.s.templateName}`),
-          h('span.muted.small', fmtDate(r.s.start)), h('span.chev', '›'))));
+          h('span.muted.small', fmtDate(r.s.start) + (r.s.workoutStart ? ' · ' + fmtDuration(new Date(r.s.end) - new Date(r.s.workoutStart)) : '')),
+          h('span.chev', '›'))));
       } else {
         ul.append(h('li', h('span', '🥊'), h('span', { style: 'flex:1' }, boxingLabel(r.b.type)),
           h('span.muted.small', fmtDate(r.b.date + 'T12:00:00')),

@@ -57,7 +57,7 @@ La scheda cambia ogni 2-3 mesi, di solito quando c'è uno stallo.
 
 - `exercises`: id, nome, gruppo muscolare, tipo (bilanciere, manubri, macchina, corpo libero), note.
 - `templates`: id, nome (A/B), elenco ordinato di esercizi con serie e ripetizioni target e flag opzionale, attiva/archiviata, date.
-- `sessions`: id, data, template, peso corporeo, note, inizio e fine.
+- `sessions`: id, data, template, peso corporeo, note, inizio e fine, `workoutStart` (partenza del cronometro: alla prima serie confermata o a mano; la durata è fine − workoutStart). Campo aggiunto in v2: le sessioni vecchie semplicemente non ce l'hanno.
 - `sets`: id, sessione, esercizio, numero serie, peso, ripetizioni, RIR, recupero in secondi, nota, timestamp.
 - `boxing`: id, data, tipo.
 

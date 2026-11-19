@@ -3,8 +3,8 @@
 import { route, go } from '../router.js';
 import { h, toast, parseNum, fmtNum, fmtDate, fmtRest, setLabel, epley } from '../ui.js';
 import { get, put, del, all, uid } from '../db.js';
-import { exercisesMap, setsOfSession, historyOf, bestOf, sessionVolume } from '../data.js';
-import { startTimer, stopTimer, timerState, restoreTimer } from '../timer.js';
+import { exercisesMap, setsOfSession, historyOf, bestOf, sessionVolume, openSession } from '../data.js';
+import { startTimer, stopTimer, timerState, restoreTimer, setNext } from '../timer.js';
 import { GROUPS } from '../seed.js';
 
 // Valori scritti ma non ancora confermati, per non perderli quando la scheda si ridisegna.
@@ -16,6 +16,35 @@ function draftOf(sessionId, exId, n) {
   if (!drafts.has(k)) drafts.set(k, {});
   return drafts.get(k);
 }
+
+// Durata in formato 1:02:03 oppure 12:34
+export function fmtDuration(ms) {
+  const t = Math.max(0, Math.floor(ms / 1000));
+  const hh = Math.floor(t / 3600), mm = Math.floor((t % 3600) / 60), ss = t % 60;
+  const p = (n) => String(n).padStart(2, '0');
+  return hh ? `${hh}:${p(mm)}:${p(ss)}` : `${mm}:${p(ss)}`;
+}
+
+// Schermo sempre acceso mentre c'è un allenamento aperto (dove iOS lo permette).
+let wakeLock = null;
+async function keepAwake(on) {
+  try {
+    if (on) {
+      if (!wakeLock && 'wakeLock' in navigator && document.visibilityState === 'visible') {
+        wakeLock = await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener('release', () => { wakeLock = null; });
+      }
+    } else if (wakeLock) {
+      await wakeLock.release();
+      wakeLock = null;
+    }
+  } catch { wakeLock = null; }
+}
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && await openSession()) keepAwake(true);
+});
+
+let clockTick = null;
 
 function targetSeconds(item) {
   const m = String(item.reps || '').match(/(\d+)\s*"/);
@@ -45,11 +74,91 @@ route('/sessione/:id', async ({ id }) => {
     type: 'text', inputmode: 'decimal', placeholder: 'facoltativo', value: session.bodyweight ?? '',
     onchange: async (e) => { session.bodyweight = parseNum(e.target.value); await put('sessions', session); },
   });
-  node.append(h('div.card.session-head',
-    h('div.field', h('label', 'Peso corporeo (kg)'), bw),
-    h('div.muted.small', { style: 'padding-bottom:12px;text-align:right' },
-      fmtDate(session.start, true), h('br'),
-      isOpen ? 'in corso' : `finito alle ${new Date(session.end).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`)));
+  const progress = h('div.progress', h('div.track', h('i')), h('div.txt', h('span'), h('span')));
+  node.append(h('div.card',
+    h('div.session-head',
+      h('div.field', h('label', 'Peso corporeo (kg)'), bw),
+      h('div.muted.small', { style: 'padding-bottom:12px;text-align:right' },
+        fmtDate(session.start, true), h('br'),
+        isOpen ? 'in corso' : `finito alle ${new Date(session.end).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`)),
+    progress));
+
+  // Cronometro dell'allenamento: parte da solo alla prima serie confermata
+  // (così il riscaldamento non conta) oppure a mano toccandolo.
+  const clock = h('button.clock-btn', {
+    onclick: async () => {
+      if (!isOpen) return;
+      if (!session.workoutStart) {
+        session.workoutStart = new Date().toISOString();
+        await put('sessions', session);
+        drawClock();
+        toast('Cronometro avviato');
+      } else {
+        toast(`Cronometro partito alle ${new Date(session.workoutStart).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}`);
+      }
+    },
+  });
+  function drawClock() {
+    if (session.workoutStart) {
+      const endMs = session.end ? new Date(session.end).getTime() : Date.now();
+      clock.textContent = '⏱ ' + fmtDuration(endMs - new Date(session.workoutStart).getTime());
+      clock.className = 'clock-btn running';
+    } else {
+      clock.textContent = isOpen ? '▶ Cronometro' : '';
+      clock.className = 'clock-btn idle';
+      clock.hidden = !isOpen;
+    }
+  }
+  drawClock();
+  clearInterval(clockTick);
+  if (isOpen) {
+    let seen = false;
+    clockTick = setInterval(() => {
+      if (clock.isConnected) { seen = true; drawClock(); }
+      else if (seen) clearInterval(clockTick);
+    }, 1000);
+  }
+
+  function updateProgress() {
+    const main = items.filter(i => !i.optional);
+    let doneEx = 0, doneSets = 0, totalSets = 0;
+    for (const it of main) {
+      const n = sets.filter(s => s.exerciseId === it.exerciseId).length;
+      totalSets += it.sets || 1;
+      doneSets += Math.min(n, it.sets || 1);
+      if (n >= (it.sets || 1)) doneEx++;
+    }
+    progress.querySelector('.track i').style.width = (totalSets ? (doneSets / totalSets) * 100 : 0) + '%';
+    const [a, b] = progress.querySelectorAll('.txt span');
+    a.textContent = `Esercizi ${doneEx} / ${main.length}`;
+    b.textContent = `Serie ${doneSets} / ${totalSets}`;
+  }
+
+  // Evidenzia la serie da fare adesso: la prossima non confermata dopo l'ultima fatta.
+  function markCurrent(scroll) {
+    node.querySelectorAll('.set.current').forEach(r => { r.classList.remove('current'); r.querySelector('.now-tag')?.remove(); });
+    node.querySelectorAll('.ex.current-ex').forEach(c => c.classList.remove('current-ex'));
+    if (!isOpen) return null;
+    const rows = [...node.querySelectorAll('.set')].filter(r => !r.closest('details:not([open])'));
+    const last = [...sets].sort((a, b) => (a.ts || '').localeCompare(b.ts || '')).pop();
+    let start = 0;
+    if (last) {
+      const i = rows.findIndex(r => r.dataset.ex === last.exerciseId && Number(r.dataset.n) === last.setNumber);
+      if (i >= 0) start = i;
+    }
+    const pending = (r) => !r.classList.contains('saved');
+    const cur = rows.slice(start).find(pending) || rows.find(pending);
+    if (!cur) { setNext(''); return null; }
+    cur.classList.add('current');
+    cur.prepend(h('div.now-tag', 'SERIE IN CORSO'));
+    const card = cur.closest('.ex');
+    card.classList.add('current-ex');
+    setNext(cur.dataset.label);
+    if (scroll && (!last || last.exerciseId !== cur.dataset.ex)) {
+      setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+    }
+    return cur;
+  }
 
   const cards = new Map();
 
@@ -109,6 +218,9 @@ route('/sessione/:id', async ({ id }) => {
     const lastPrev = prev[prev.length - 1];
     const prevRowMine = mine.filter(s => s.setNumber < n).pop();
     const row = h('div.set', { class: saved ? 'saved' : '' });
+    row.dataset.ex = ex.id;
+    row.dataset.n = String(n);
+    row.dataset.label = `${ex.name} · serie ${n}` + (p ? ` · ultima ${setLabel(p, mode)}` : '');
 
     if (mode === 'check') {
       row.append(h('div.set-top',
@@ -122,7 +234,7 @@ route('/sessione/:id', async ({ id }) => {
               const s = { id: uid(), sessionId: id, exerciseId: ex.id, setNumber: n, weight: null, reps: null, durationSec: null, rir: null, restSec: null, note: '', ts: new Date().toISOString() };
               await put('sets', s); sets.push(s);
             }
-            refresh(item);
+            refresh(item, !saved);
           },
         }, '✓')));
       return row;
@@ -187,8 +299,13 @@ route('/sessione/:id', async ({ id }) => {
         const s = await saveEdits();
         if (!s) return;
         drafts.delete(`${id}|${ex.id}|${n}`);
+        if (isOpen && !session.workoutStart) {
+          session.workoutStart = new Date().toISOString();
+          await put('sessions', session);
+          drawClock();
+        }
         if (isOpen && item.restSec) startTimer({ setId: s.id, duration: item.restSec, label: ex.name });
-        refresh(item);
+        refresh(item, true);
       },
     }, '✓');
 
@@ -272,11 +389,13 @@ route('/sessione/:id', async ({ id }) => {
     return false;
   }
 
-  function refresh(item) {
+  function refresh(item, advance = false) {
     const old = cards.get(item.exerciseId);
     const fresh = renderCard(item);
     cards.set(item.exerciseId, fresh);
     old.replaceWith(fresh);
+    updateProgress();
+    markCurrent(advance);
   }
 
   // Esercizi principali
@@ -290,6 +409,7 @@ route('/sessione/:id', async ({ id }) => {
     h('summary', h('h2', 'Se c\'è tempo: core e stretching')));
   for (const it of optional) { const c = renderCard(it); cards.set(it.exerciseId, c); det.append(c); }
   det.append(addExercisePanel(session, exMap, items));
+  det.addEventListener('toggle', () => markCurrent(false));
   node.append(det);
 
   // Note e chiusura
@@ -309,7 +429,9 @@ route('/sessione/:id', async ({ id }) => {
         if (!all.length && !confirm('Non hai registrato nessuna serie. Terminare comunque?')) return;
         session.end = new Date().toISOString();
         await put('sessions', session);
-        toast(`Allenamento salvato: ${all.length} serie, volume ${fmtNum(sessionVolume(all), 0)} kg`, { ms: 5000 });
+        keepAwake(false);
+        const dur = session.workoutStart ? `, durata ${fmtDuration(new Date(session.end) - new Date(session.workoutStart))}` : '';
+        toast(`Allenamento salvato: ${all.length} serie, volume ${fmtNum(sessionVolume(all), 0)} kg${dur}`, { ms: 6000 });
         go('#/');
       },
     }, 'Termina allenamento'));
@@ -324,14 +446,22 @@ route('/sessione/:id', async ({ id }) => {
       if (timerState()) await stopTimer();
       for (const s of await setsOfSession(id)) await del('sets', s.id);
       await del('sessions', id);
+      keepAwake(false);
       go('#/');
     },
   }, 'Elimina allenamento'));
   node.append(actions);
 
-  if (isOpen) restoreTimer();
+  updateProgress();
+  const cur = markCurrent(false);
+  if (isOpen) {
+    restoreTimer();
+    keepAwake(true);
+    // Riaprendo un allenamento già iniziato, vado direttamente alla serie in corso
+    if (cur && sets.length) setTimeout(() => cur.closest('.ex').scrollIntoView({ block: 'start' }), 60);
+  }
 
-  return { title: `Scheda ${session.templateName}`, back: '#/', node, tab: 'home' };
+  return { title: `Scheda ${session.templateName}`, back: '#/', node, tab: 'home', right: clock };
 });
 
 // Aggiunge un esercizio solo a questa sessione (utile per il core, che cambia spesso).
