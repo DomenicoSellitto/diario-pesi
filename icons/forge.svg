@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 100 100">
+  <!-- Icona di Forge: martello da guerra incandescente con scintille. Sorgente dei PNG in questa cartella. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2A2A30"/>
+      <stop offset="1" stop-color="#121215"/>
+    </linearGradient>
+    <linearGradient id="head" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFB13B"/>
+      <stop offset=".55" stop-color="#FF5A2C"/>
+      <stop offset="1" stop-color="#C7261B"/>
+    </linearGradient>
+    <linearGradient id="handle" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FF8A3D"/>
+      <stop offset="1" stop-color="#D9411F"/>
+    </linearGradient>
+  </defs>
+  <rect width="100" height="100" fill="url(#bg)"/>
+  <g transform="translate(5 1)">
+  <g transform="translate(6 0) rotate(-35 50 52) translate(50 52) scale(.85) translate(-50 -52)">
+    <rect x="45" y="46" width="10" height="34" rx="2" fill="url(#handle)"/>
+    <g stroke="#9E2617" stroke-width="2">
+      <path d="M45 54 L55 58"/>
+      <path d="M45 61 L55 65"/>
+      <path d="M45 68 L55 72"/>
+    </g>
+    <circle cx="50" cy="84" r="6" fill="url(#handle)"/>
+    <rect x="22" y="16" width="56" height="32" rx="5" fill="url(#head)"/>
+    <g stroke="#B5321F" stroke-width="3">
+      <path d="M34 16 V48"/>
+      <path d="M66 16 V48"/>
+    </g>
+  </g>
+  <g stroke="#FFB13B" stroke-width="3.5" stroke-linecap="round">
+    <path d="M24 62 L14 66"/>
+    <path d="M28 68 L21 77"/>
+    <path d="M34 71 L33 82"/>
+    <path d="M22 54 L12 53"/>
+  </g>
+  </g>
+</svg>
