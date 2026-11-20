@@ -33,7 +33,7 @@ export async function render() {
     out = { title: 'Errore', node: Object.assign(document.createElement('p'), { textContent: 'Qualcosa è andato storto: ' + err.message }) };
   }
   if (id !== renderId) return; // nel frattempo è stata aperta un'altra pagina
-  document.getElementById('title').textContent = out.title || 'Diario Pesi';
+  document.getElementById('title').textContent = out.title || 'Forge';
   const back = document.getElementById('back');
   back.hidden = !out.back;
   back.onclick = () => { if (out.back) go(out.back); };

@@ -65,7 +65,7 @@ route('/altro', async () => {
 
   node.append(h('h2', 'Informazioni'),
     h('div.card.small',
-      h('p', { style: 'margin-top:0' }, 'Diario Pesi · funziona anche senza connessione.'),
+      h('p', { style: 'margin-top:0' }, 'Forge · funziona anche senza connessione.'),
       h('p', 'Il timer di recupero resta giusto anche se chiudi l\'app, ma con lo schermo bloccato il suono non è garantito.'),
       h('p.muted', { id: 'ver', style: 'margin-bottom:0' }, '')));
 

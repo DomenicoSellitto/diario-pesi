@@ -1,13 +1,13 @@
 {
-  "name": "Diario Pesi",
-  "short_name": "Diario Pesi",
+  "name": "Forge",
+  "short_name": "Forge",
   "description": "Diario di allenamento con i pesi e il pugilato",
   "lang": "it",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#111114",
+  "background_color": "#121215",
   "theme_color": "#111114",
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },

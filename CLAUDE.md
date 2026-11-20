@@ -1,6 +1,13 @@
-# Diario Pesi — brief di progetto
+# Forge — brief di progetto
 
 Questo file descrive il progetto e le decisioni già prese. Leggilo per intero prima di scrivere codice e tienilo aggiornato quando cambia qualcosa di importante.
+
+## Nome e icona
+
+- L'app si chiama **Forge** (prima "Diario Pesi"). Icona: martello da guerra incandescente con scintille su fondo scuro; sorgente in `icons/forge.svg`, i PNG si rigenerano da lì.
+- Gli identificativi interni restano `diario-pesi`: nome del database IndexedDB, prefisso della cache del service worker, campo `app` dei backup JSON, indirizzo del repository e di GitHub Pages. **Non cambiarli**: si perderebbero i dati o i backup non sarebbero più importabili.
+- Nome e icona sulla schermata Home si aggiornano solo togliendo e riaggiungendo l'app su iPhone.
+- Icone del menu: Tabler Icons (MIT) incollate in `index.html` — fiamma (Oggi), trending-up (Storico), chart-bar (Riepilogo).
 
 ## Cos'è
 

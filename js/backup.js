@@ -6,7 +6,7 @@ export async function buildJSON() {
   const data = await dumpAll();
   const payload = { app: 'diario-pesi', schemaVersion: DB_VERSION, exportedAt: new Date().toISOString(), data };
   const blob = new Blob([JSON.stringify(payload, null, 1)], { type: 'application/json' });
-  return new File([blob], `diario-pesi-backup-${todayKey()}.json`, { type: 'application/json' });
+  return new File([blob], `forge-backup-${todayKey()}.json`, { type: 'application/json' });
 }
 
 const csvCell = (v) => {
@@ -31,7 +31,7 @@ export async function buildCSV() {
     rows.push([b.date, 'pugilato', '', b.type, '', '', '', '', '', '', '', '', '', '']);
   }
   const text = '﻿' + rows.map(r => r.map(csvCell).join(';')).join('\n');
-  return new File([text], `diario-pesi-${todayKey()}.csv`, { type: 'text/csv' });
+  return new File([text], `forge-${todayKey()}.csv`, { type: 'text/csv' });
 }
 
 // Su iPhone apre il foglio di condivisione (Salva in File, AirDrop, Mail...).
@@ -66,7 +66,7 @@ export async function importJSON(file) {
   const text = await file.text();
   let payload;
   try { payload = JSON.parse(text); } catch { throw new Error('Il file non è un JSON valido.'); }
-  if (payload?.app !== 'diario-pesi' || !payload.data) throw new Error('Questo file non è un backup di Diario Pesi.');
+  if (payload?.app !== 'diario-pesi' || !payload.data) throw new Error('Questo file non è un backup di Forge.');
   if (payload.schemaVersion > DB_VERSION) throw new Error('Il backup viene da una versione più nuova dell\'app: aggiorna prima l\'app.');
   payload = migrateBackup(payload);
   const data = {};
